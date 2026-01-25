@@ -28,11 +28,11 @@ export function ReportsPage() {
     setShowAdd(false);
   };
 
-  const handleDownload = (id: string, name: string) => {
+  const handleDownload = (name: string) => {
     alert(`Downloader rapport: ${name} (simuleret)`);
   };
 
-  const handleShare = (id: string, name: string) => {
+  const handleShare = (name: string) => {
     alert(`Deler rapport: ${name} (simuleret)`);
   };
 
@@ -79,10 +79,10 @@ export function ReportsPage() {
               <TableCell>{r.status}</TableCell>
               <TableCell>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="secondary" onClick={() => handleDownload(r.id, r.name)}>
+                  <Button size="sm" variant="secondary" onClick={() => handleDownload(r.name)}>
                     Download
                   </Button>
-                  <Button size="sm" variant="ghost" onClick={() => handleShare(r.id, r.name)}>
+                  <Button size="sm" variant="ghost" onClick={() => handleShare(r.name)}>
                     Del
                   </Button>
                 </div>
