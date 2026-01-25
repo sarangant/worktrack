@@ -1,0 +1,22 @@
+:root {
+  --surface: #0b132b;
+  --panel: #0f172a;
+  --muted: #94a3b8;
+  --border: #1e293b;
+  --accent: #22c55e;
+  --accent-soft: #34d399;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --success: #22c55e;
+}
+
+body {
+  background-color: var(--surface);
+  color: #e2e8f0;
+}
+
+.glass {
+  background: linear-gradient(140deg, rgba(15, 23, 42, 0.95), rgba(11, 19, 43, 0.88));
+  border: 1px solid var(--border);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.28);
+}

@@ -1,0 +1,21 @@
+@import './styles/theme.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+* {
+  @apply antialiased;
+}
+
+body {
+  @apply bg-surface text-slate-100 min-h-screen;
+}
+
+a {
+  @apply text-accent hover:text-accentSoft;
+}
