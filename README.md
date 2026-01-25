@@ -1,6 +1,46 @@
 # Worktrack
 A modern time-tracking and absence management system with role-based access for employees and administrators. Frontend is fully functional; backend is intentionally empty (to be built with NestJS).
 
+## Deploy on Vercel
+
+### Prerequisites
+- GitHub repository with this code
+- Vercel account (free)
+
+### Steps
+1. **Push to GitHub**
+   ```bash
+   git add .
+   git commit -m "Initial commit"
+   git branch -M main
+   git remote add origin https://github.com/YOUR_USERNAME/worktrack.git
+   git push -u origin main
+   ```
+
+2. **Import on Vercel**
+   - Go to [vercel.com](https://vercel.com)
+   - Click “Add New…” → “Project”
+   - Import your `worktrack` repo
+   - Vercel will auto-detect the `vercel.json` settings
+   - Click “Deploy”
+
+3. **Environment Variables (optional)**
+   - If you have a real API later, add `VITE_API_URL` in Vercel’s Environment Variables.
+
+4. **Visit your site**
+   - After deployment, Vercel gives you a `*.vercel.app` URL.
+   - All routes (`/login`, `/dashboard`, `/admin/*`) work out of the box.
+
+### How Vercel Config Works
+- `vercel.json` tells Vercel to:
+  - Run `npm run build` inside `frontend/`
+  - Serve files from `frontend/dist/`
+  - Rewrite all routes to `index.html` so React Router works.
+
+### Test Logins (same as local)
+- **Admin**: any email + any password → `/admin/users`
+- **Employee**: any employee ID + any password → `/dashboard`
+
 ## Features
 - **Authentication**: Mocked login for Admin (email) and Employee (employee ID) roles.
 - **Dashboard (Employee)**: Check in/out, register absence, pause tracking, recent sessions.
