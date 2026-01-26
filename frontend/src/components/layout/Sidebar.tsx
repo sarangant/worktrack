@@ -39,7 +39,7 @@ const adminLinks = [
   { to: '/admin/reports', label: 'Rapporter', icon: BarChart3 },
 ];
 
-export function Sidebar() {
+export function Sidebar({ onClose }: { onClose?: () => void }) {
   const [auth] = useAtom(authAtom);
   const navigate = useNavigate();
   const isAdmin = auth.user?.role === Roles.Admin;
@@ -50,16 +50,30 @@ export function Sidebar() {
     navigate('/login');
   };
 
+  const handleLinkClick = () => {
+    onClose?.();
+  };
+
   return (
     <aside className="w-64 bg-[#0d152e] border-r border-border min-h-screen px-4 py-6 flex flex-col gap-4">
-      <div className="flex items-center gap-3 px-2">
-        <div className="h-10 w-10 rounded-xl bg-accent/20 border border-accent/40 flex items-center justify-center text-accent font-black">
-          WT
+      <div className="flex items-center justify-between px-2">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-accent/20 border border-accent/40 flex items-center justify-center text-accent font-black">
+            WT
+          </div>
+          <div>
+            <p className="text-lg font-bold text-white">Worktrack</p>
+            <p className="text-xs text-muted">Tidsregistrering</p>
+          </div>
         </div>
-        <div>
-          <p className="text-lg font-bold text-white">Worktrack</p>
-          <p className="text-xs text-muted">Tidsregistrering</p>
-        </div>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="md:hidden rounded-lg border border-border bg-panel p-2 hover:border-accent transition"
+          >
+            ✕
+          </button>
+        )}
       </div>
 
       <nav className="flex-1 flex flex-col gap-1">
@@ -67,6 +81,7 @@ export function Sidebar() {
           <NavLink
             key={to}
             to={to}
+            onClick={handleLinkClick}
             className={({ isActive }) => cn(baseLink, isActive ? activeClass : inactiveClass)}
           >
             <Icon size={18} />

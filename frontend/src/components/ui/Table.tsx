@@ -8,21 +8,19 @@ type TableProps = {
 
 export function Table({ headers, children, className }: TableProps) {
   return (
-    <div className={cn('overflow-hidden rounded-xl border border-border bg-panel', className)}>
-      <div className="overflow-auto">
-        <table className="min-w-full text-sm text-slate-100">
-          <thead className="bg-[#0f1832] text-muted uppercase text-[11px] tracking-wide">
-            <tr>
-              {headers.map((h) => (
-                <th key={h} className="px-4 py-3 text-left font-semibold">
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">{children}</tbody>
-        </table>
-      </div>
+    <div className={cn('overflow-x-auto', className)}>
+      <table className="w-full text-sm text-left text-slate-200">
+        <thead className="text-xs uppercase text-muted border-b border-border">
+          <tr>
+            {headers.map((header) => (
+              <th key={header} className="px-4 py-3 font-semibold">
+                {header}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-border">{children}</tbody>
+      </table>
     </div>
   );
 }

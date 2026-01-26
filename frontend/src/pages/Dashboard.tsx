@@ -78,13 +78,13 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
         <Card title="Velkommen" description={`God arbejdsdag, ${userName}!`}>
           <p className="text-sm text-muted">
             Start eller slut din dag, registrer fravær eller se dine nøgletal. Dine handlinger synkroniseres automatisk
             med statusboardet.
           </p>
-          <div className="mt-4 flex flex-wrap gap-3">
+          <div className="mt-4 flex flex-wrap gap-2">
             <Button size="sm" onClick={handleCheckIn} disabled={checkedIn}>Check ind</Button>
             <Button variant="secondary" size="sm" onClick={handleCheckOut} disabled={!checkedIn}>
               Check ud
@@ -110,7 +110,7 @@ export function DashboardPage() {
         </Card>
 
         <Card title="Hurtige handlinger">
-          <div className="grid grid-cols-2 gap-3 text-sm">
+          <div className="grid grid-cols-2 gap-2 text-sm">
             <Button size="sm" variant="secondary" onClick={() => handlePause(15)}>
               Pause 15m
             </Button>
