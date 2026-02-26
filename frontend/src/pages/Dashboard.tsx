@@ -1,10 +1,7 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
-import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
-import { useAtom } from 'jotai';
-import { authAtom } from '../state/auth';
 
 const initialSessions: Array<{ id: string; start: string; end?: string; balance: string }> = [
   { id: 's1', start: '2024-11-20T08:00:00Z', end: '2024-11-20T16:02:00Z', balance: '+12m' },
@@ -40,7 +37,6 @@ const saveToStorage = (state: ReturnType<typeof loadFromStorage>) => {
 };
 
 export function DashboardPage() {
-  const [auth] = useAtom(authAtom);
   const navigate = useNavigate();
   const stored = loadFromStorage();
   const [sessions, setSessions] = useState(stored.sessions);
@@ -71,11 +67,11 @@ export function DashboardPage() {
 
   const handleCheckOut = () => {
     const now = new Date();
-    const activeSession = sessions.find(s => !s.end);
+    const activeSession = sessions.find((s: { id: string; start: string; end?: string; balance: string }) => !s.end);
     if (!activeSession) return;
     
     const updatedSession = { ...activeSession, end: now.toISOString() };
-    const updatedSessions = sessions.map(s => s.id === activeSession.id ? updatedSession : s);
+    const updatedSessions = sessions.map((s: { id: string; start: string; end?: string; balance: string }) => s.id === activeSession.id ? updatedSession : s);
     setSessions(updatedSessions);
     setCheckedIn(false);
     
@@ -89,7 +85,7 @@ export function DashboardPage() {
     saveToStorage({ sessions: updatedSessions, flexStats: flexStats, checkedIn: false });
   };
 
-  const calculateTodayFlex = (todaySessions: any[]) => {
+  const calculateTodayFlex = (todaySessions: { id: string; start: string; end?: string; balance: string }[]) => {
     const totalMinutes = todaySessions.reduce((acc, session) => {
       if (session.start && session.end) {
         const start = new Date(session.start);
@@ -124,7 +120,7 @@ export function DashboardPage() {
     setAbsenceNote('');
   };
 
-  const todaySessions = sessions.filter(s => {
+  const todaySessions = sessions.filter((s: { id: string; start: string; end?: string; balance: string }) => {
     const sessionDate = new Date(s.start);
     const today = new Date();
     return sessionDate.toDateString() === today.toDateString();
@@ -132,7 +128,7 @@ export function DashboardPage() {
 
   const todayFlex = calculateTodayFlex(todaySessions);
 
-  const userName = auth.user?.name ?? 'Medarbejder';
+  // const userName = auth.user?.name ?? 'Medarbejder';
 
   return (
     <div className="space-y-6">
@@ -208,7 +204,7 @@ export function DashboardPage() {
       <div className="white-card p-6">
         <h3 className="text-lg font-semibold text-slate-900 mb-4">Seneste aktivitet</h3>
         <div className="space-y-3">
-          {sessions.slice(0, 3).map((session) => (
+          {sessions.slice(0, 3).map((session: { id: string; start: string; end?: string; balance: string }) => (
             <div key={session.id} className="flex justify-between items-center py-2 border-b border-slate-100">
               <div>
                 <div className="font-medium text-slate-900">
