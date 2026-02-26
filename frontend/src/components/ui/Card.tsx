@@ -10,17 +10,17 @@ type CardProps = {
 
 export function Card({ title, description, children, actions, className }: CardProps) {
   return (
-    <div className={cn('rounded-2xl border border-border bg-panel p-5 shadow-card', className)}>
-      {(title || actions) && (
-        <div className="mb-4 flex items-start justify-between gap-3">
-          <div>
-            {title && <h3 className="text-lg font-semibold text-white">{title}</h3>}
-            {description && <p className="text-sm text-muted">{description}</p>}
-          </div>
-          {actions}
+    <div className={cn('white-card p-6', className)}>
+      {(title || description || actions) && (
+        <div className="mb-4">
+          {title && <h3 className="text-lg font-semibold text-slate-900">{title}</h3>}
+          {description && <p className="text-sm text-slate-600 mt-1">{description}</p>}
+          {actions && <div className="mt-2">{actions}</div>}
         </div>
       )}
-      {children}
+      <div className="space-y-4">
+        {children}
+      </div>
     </div>
   );
 }

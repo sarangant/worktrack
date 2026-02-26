@@ -28,6 +28,8 @@ const employeeLinks = [
   { to: '/history', label: 'Historik', icon: History },
   { to: '/reports', label: 'Rapporter', icon: FileText },
   { to: '/profile', label: 'Profil', icon: User },
+  { to: '/notes', label: 'Noter', icon: FileText },
+  { to: '/sample-reports', label: 'Eksempelrapporter', icon: FileText },
 ];
 
 const adminLinks = [
@@ -55,7 +57,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
   };
 
   return (
-    <aside className="w-64 bg-[#0d152e] border-r border-border min-h-screen px-4 py-6 flex flex-col gap-4">
+    <aside className="w-full h-full bg-[#0d152e] border-r border-border px-4 py-6 flex flex-col gap-4">
       <div className="flex items-center justify-between px-2">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-accent/20 border border-accent/40 flex items-center justify-center text-accent font-black">
@@ -66,17 +68,15 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
             <p className="text-xs text-muted">Tidsregistrering</p>
           </div>
         </div>
-        {onClose && (
-          <button
-            onClick={onClose}
-            className="md:hidden rounded-lg border border-border bg-panel p-2 hover:border-accent transition"
-          >
-            ✕
-          </button>
-        )}
+        <button
+          onClick={onClose}
+          className="rounded-lg border border-border bg-panel p-2 hover:border-accent transition"
+        >
+          ✕
+        </button>
       </div>
 
-      <nav className="flex-1 flex flex-col gap-1">
+      <nav className="flex-1 flex flex-col gap-1 overflow-y-auto">
         {links.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}

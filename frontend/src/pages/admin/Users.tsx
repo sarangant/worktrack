@@ -52,7 +52,7 @@ export function UsersPage() {
       <div className="flex items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-white">Brugere</h1>
-          <p className="text-muted">Administrér medarbejdere, roller og status.</p>
+          <p className="text-slate-300">Administrér medarbejdere, roller og status.</p>
         </div>
         <Button size="sm" onClick={() => setShowAdd(true)}>Tilføj bruger</Button>
       </div>
@@ -65,7 +65,7 @@ export function UsersPage() {
             <select
               value={form.role}
               onChange={(e) => setForm({ ...form, role: e.target.value as 'admin' | 'employee' })}
-              className="w-full rounded-lg border border-border bg-panel px-4 py-3 text-sm text-slate-100"
+              className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900"
             >
               <option value="employee">Medarbejder</option>
               <option value="admin">Administrator</option>
@@ -87,7 +87,7 @@ export function UsersPage() {
           {users.map((user) => (
             <TableRow key={user.id}>
               <TableCell>{user.name}</TableCell>
-              <TableCell className="text-muted">{user.email}</TableCell>
+              <TableCell className="text-slate-600">{user.email}</TableCell>
               <TableCell>
                 <Badge variant={user.role === 'admin' ? 'accent' : 'neutral'}>
                   {user.role === 'admin' ? 'Administrator' : 'Medarbejder'}

@@ -5,6 +5,8 @@ import { DashboardPage } from './pages/Dashboard';
 import { HistoryPage } from './pages/History';
 import { ReportsPage } from './pages/Reports';
 import { ProfilePage } from './pages/Profile';
+import { SettingsPage } from './pages/Settings';
+import { NotesPage, SampleReportsPage } from './pages/Notes';
 import { UsersPage } from './pages/admin/Users';
 import { CalendarsPage } from './pages/admin/Calendars';
 import { AbsenceTypesPage } from './pages/admin/AbsenceTypes';
@@ -54,6 +56,36 @@ export default function App() {
           <AuthGate>
             <AppShell>
               <ProfilePage />
+            </AppShell>
+          </AuthGate>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <AuthGate>
+            <AppShell>
+              <SettingsPage />
+            </AppShell>
+          </AuthGate>
+        }
+      />
+      <Route
+        path="/notes"
+        element={
+          <AuthGate>
+            <AppShell>
+              <NotesPage />
+            </AppShell>
+          </AuthGate>
+        }
+      />
+      <Route
+        path="/sample-reports"
+        element={
+          <AuthGate>
+            <AppShell>
+              <SampleReportsPage />
             </AppShell>
           </AuthGate>
         }

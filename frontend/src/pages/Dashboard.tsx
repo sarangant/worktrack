@@ -1,10 +1,8 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
-import { Card } from '../components/ui/Card';
-import { Input } from '../components/ui/Input';
-import { Table, TableCell, TableRow } from '../components/ui/Table';
 import { useAtom } from 'jotai';
 import { authAtom } from '../state/auth';
 
@@ -14,19 +12,43 @@ const initialSessions: Array<{ id: string; start: string; end?: string; balance:
   { id: 's3', start: '2024-11-18T07:58:00Z', end: '2024-11-18T16:10:00Z', balance: '+18m' },
 ];
 
-const initialFlexStats = [
+const initialFlexStats: Array<{ label: string; value: string }> = [
   { label: 'Akkumuleret flex', value: '+2t 35m' },
   { label: 'Dagens saldo', value: '+12m' },
   { label: 'Sidste fravær', value: '13. nov · Ferie' },
 ];
 
+const loadFromStorage = () => {
+  const stored = localStorage.getItem('dashboardState');
+  if (stored) {
+    const parsed = JSON.parse(stored);
+    return {
+      sessions: parsed.sessions || initialSessions,
+      flexStats: parsed.flexStats || initialFlexStats,
+      checkedIn: parsed.checkedIn || false,
+    };
+  }
+  return {
+    sessions: initialSessions,
+    flexStats: initialFlexStats,
+    checkedIn: false,
+  };
+};
+
+const saveToStorage = (state: ReturnType<typeof loadFromStorage>) => {
+  localStorage.setItem('dashboardState', JSON.stringify(state));
+};
+
 export function DashboardPage() {
   const [auth] = useAtom(authAtom);
-  const [sessions, setSessions] = useState(initialSessions);
-  const [flexStats, setFlexStats] = useState(initialFlexStats);
-  const [checkedIn, setCheckedIn] = useState(false);
-  const [showAbsence, setShowAbsence] = useState(false);
-  const [absenceForm, setAbsenceForm] = useState({ type: 'Ferie', from: '', to: '', note: '' });
+  const navigate = useNavigate();
+  const stored = loadFromStorage();
+  const [sessions, setSessions] = useState(stored.sessions);
+  const [flexStats, setFlexStats] = useState(stored.flexStats);
+  const [checkedIn, setCheckedIn] = useState(stored.checkedIn);
+  const [showAbsenceModal, setShowAbsenceModal] = useState(false);
+  const [absenceType, setAbsenceType] = useState('');
+  const [absenceNote, setAbsenceNote] = useState('');
 
   const handleCheckIn = () => {
     const now = new Date();
@@ -36,140 +58,220 @@ export function DashboardPage() {
       end: undefined,
       balance: '',
     };
-    setSessions([newSession, ...sessions]);
+    const updatedSessions = [newSession, ...sessions];
+    setSessions(updatedSessions);
     setCheckedIn(true);
     setFlexStats([
-      { ...flexStats[0] },
+      flexStats[0],
       { ...flexStats[1], value: `Check-in kl. ${format(now, 'HH:mm')}` },
       flexStats[2],
     ]);
+    saveToStorage({ sessions: updatedSessions, flexStats: flexStats, checkedIn: true });
   };
 
   const handleCheckOut = () => {
     const now = new Date();
-    setSessions(sessions.map(s => {
-      if (!s.end && s.id === sessions[0].id) {
-        const duration = Math.round((now.getTime() - new Date(s.start).getTime()) / 60000);
-        const balance = duration > 480 ? `+${duration - 480}m` : `-${480 - duration}m`;
-        return { ...s, end: now.toISOString(), balance };
-      }
-      return s;
-    }));
+    const activeSession = sessions.find(s => !s.end);
+    if (!activeSession) return;
+    
+    const updatedSession = { ...activeSession, end: now.toISOString() };
+    const updatedSessions = sessions.map(s => s.id === activeSession.id ? updatedSession : s);
+    setSessions(updatedSessions);
     setCheckedIn(false);
+    
+    // Calculate flex for today
+    const todayFlex = calculateTodayFlex(updatedSessions);
     setFlexStats([
-      { ...flexStats[0] },
+      flexStats[0],
       { ...flexStats[1], value: `Check-ud kl. ${format(now, 'HH:mm')}` },
-      flexStats[2],
+      { ...flexStats[2], value: `${todayFlex > 0 ? '+' : ''}${todayFlex}t` },
     ]);
+    saveToStorage({ sessions: updatedSessions, flexStats: flexStats, checkedIn: false });
   };
 
-  const handlePause = (minutes: number) => {
-    alert(`Pause registreret: ${minutes} minutter (simuleret)`);
+  const calculateTodayFlex = (todaySessions: any[]) => {
+    const totalMinutes = todaySessions.reduce((acc, session) => {
+      if (session.start && session.end) {
+        const start = new Date(session.start);
+        const end = new Date(session.end);
+        const workMinutes = (end.getTime() - start.getTime()) / (1000 * 60);
+        return acc + workMinutes;
+      }
+      return acc;
+    }, 0);
+    
+    const normalWorkMinutes = 8 * 60; // 8 hours = 480 minutes
+    return Math.round((totalMinutes - normalWorkMinutes) / 60 * 10) / 10; // Round to 1 decimal
   };
 
-  const handleAbsenceSubmit = () => {
-    if (!absenceForm.from || !absenceForm.to) return;
-    alert(`Fravær registreret: ${absenceForm.type} fra ${absenceForm.from} til ${absenceForm.to}`);
-    setAbsenceForm({ type: 'Ferie', from: '', to: '', note: '' });
-    setShowAbsence(false);
+  const handleRegisterAbsence = () => {
+    if (!absenceType) return;
+    
+    const newAbsence = {
+      id: `a${Date.now()}`,
+      type: absenceType,
+      date: new Date().toISOString(),
+      note: absenceNote,
+      status: 'pending'
+    };
+    
+    // TODO: Save absence to backend
+    console.log('Registering absence:', newAbsence);
+    alert(`${absenceType} registreret!`);
+    
+    setShowAbsenceModal(false);
+    setAbsenceType('');
+    setAbsenceNote('');
   };
+
+  const todaySessions = sessions.filter(s => {
+    const sessionDate = new Date(s.start);
+    const today = new Date();
+    return sessionDate.toDateString() === today.toDateString();
+  });
+
+  const todayFlex = calculateTodayFlex(todaySessions);
 
   const userName = auth.user?.name ?? 'Medarbejder';
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
-        <Card title="Velkommen" description={`God arbejdsdag, ${userName}!`}>
-          <p className="text-sm text-muted">
-            Start eller slut din dag, registrer fravær eller se dine nøgletal. Dine handlinger synkroniseres automatisk
-            med statusboardet.
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Button size="sm" onClick={handleCheckIn} disabled={checkedIn}>Check ind</Button>
-            <Button variant="secondary" size="sm" onClick={handleCheckOut} disabled={!checkedIn}>
-              Check ud
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => setShowAbsence(true)}>
-              Registrér fravær
-            </Button>
-          </div>
-        </Card>
-
-        <Card title="Dagens status">
-          <div className="space-y-3">
-            {flexStats.map((item) => (
-              <div
-                key={item.label}
-                className="flex items-center justify-between rounded-lg border border-border/70 bg-panel/60 px-3 py-3"
-              >
-                <span className="text-sm text-muted">{item.label}</span>
-                <span className="text-base font-semibold text-white">{item.value}</span>
-              </div>
-            ))}
-          </div>
-        </Card>
-
-        <Card title="Hurtige handlinger">
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            <Button size="sm" variant="secondary" onClick={() => handlePause(15)}>
-              Pause 15m
-            </Button>
-            <Button size="sm" variant="secondary" onClick={() => handlePause(30)}>
-              Pause 30m
-            </Button>
-            <Button size="sm" variant="ghost">
-              Notér note
-            </Button>
-            <Button size="sm" variant="ghost">
-              Vis rapport
-            </Button>
-          </div>
-          <p className="mt-3 text-xs text-muted">
-            Se detaljer under Historik for at rette tider og tilføje bemærkninger.
-          </p>
-        </Card>
+      <div>
+        <h1 className="text-2xl font-semibold text-white">Overblik</h1>
+        <p className="text-slate-300">Din arbejdsdag og flexsaldo.</p>
       </div>
 
-      {showAbsence && (
-        <Card title="Registrér fravær">
-          <div className="space-y-4">
-            <select
-              value={absenceForm.type}
-              onChange={(e) => setAbsenceForm({ ...absenceForm, type: e.target.value })}
-              className="w-full rounded-lg border border-border bg-panel px-4 py-3 text-sm text-slate-100"
+      {/* Check-in/Check-out Card */}
+      <div className="white-card p-6">
+        <div className="text-center space-y-4">
+          <div className="text-6xl font-bold text-slate-900">
+            {format(new Date(), 'HH:mm')}
+          </div>
+          <div className="text-lg text-slate-600">
+            {checkedIn ? 'Tjekket ind' : 'Tjekket ud'}
+          </div>
+          <div className="flex gap-3">
+            <Button 
+              onClick={checkedIn ? handleCheckOut : handleCheckIn}
+              className="flex-1"
+              size="lg"
             >
-              <option value="Ferie">Ferie</option>
-              <option value="Sygdom">Sygdom</option>
-              <option value="Barn syg">Barn syg</option>
-            </select>
-            <Input placeholder="Fra (dd/mm)" value={absenceForm.from} onChange={(e) => setAbsenceForm({ ...absenceForm, from: e.target.value })} />
-            <Input placeholder="Til (dd/mm)" value={absenceForm.to} onChange={(e) => setAbsenceForm({ ...absenceForm, to: e.target.value })} />
-            <Input placeholder="Note (valgfri)" value={absenceForm.note} onChange={(e) => setAbsenceForm({ ...absenceForm, note: e.target.value })} />
-            <div className="flex gap-2">
-              <Button onClick={handleAbsenceSubmit}>Registrér</Button>
-              <Button variant="ghost" onClick={() => { setShowAbsence(false); setAbsenceForm({ type: 'Ferie', from: '', to: '', note: '' }); }}>
-                Annullér
-              </Button>
+              {checkedIn ? 'Tjek ud' : 'Tjek ind'}
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Flex Balance Card */}
+      <div className="white-card p-6">
+        <h3 className="text-lg font-semibold text-slate-900 mb-4">Flexsaldo</h3>
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <span className="text-slate-600">I dag</span>
+            <span className={`text-2xl font-bold ${todayFlex >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {todayFlex > 0 ? '+' : ''}{todayFlex}t
+            </span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-slate-600">Total</span>
+            <span className="text-2xl font-bold text-slate-900">
+              {flexStats[0].value}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="white-card p-6">
+        <h3 className="text-lg font-semibold text-slate-900 mb-4">Hurtige handlinger</h3>
+        <div className="grid grid-cols-2 gap-3">
+          <Button 
+            variant="secondary"
+            onClick={() => setShowAbsenceModal(true)}
+            className="h-20 flex-col"
+          >
+            <span className="text-lg mb-1">📅</span>
+            Registrér fravær
+          </Button>
+          <Button 
+            variant="secondary"
+            onClick={() => navigate('/history')}
+            className="h-20 flex-col"
+          >
+            <span className="text-lg mb-1">📊</span>
+            Se historik
+          </Button>
+        </div>
+      </div>
+
+      {/* Recent Activity */}
+      <div className="white-card p-6">
+        <h3 className="text-lg font-semibold text-slate-900 mb-4">Seneste aktivitet</h3>
+        <div className="space-y-3">
+          {sessions.slice(0, 3).map((session) => (
+            <div key={session.id} className="flex justify-between items-center py-2 border-b border-slate-100">
+              <div>
+                <div className="font-medium text-slate-900">
+                  {format(new Date(session.start), 'dd. MMM yyyy')}
+                </div>
+                <div className="text-sm text-slate-600">
+                  {format(new Date(session.start), 'HH:mm')} - 
+                  {session.end ? format(new Date(session.end), 'HH:mm') : '...'}
+                </div>
+              </div>
+              <div className="text-sm text-slate-600">
+                {session.end ? 'Afsluttet' : 'Aktiv'}
+              </div>
+            </div>
+          ))}
+        </div>
+        {sessions.length > 5 && (
+          <Button variant="ghost" onClick={() => navigate('/history')} className="w-full mt-4 text-accent hover:text-accent/90">
+            Se alle
+          </Button>
+        )}
+      </div>
+
+      {/* Absence Registration Modal */}
+      {showAbsenceModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="white-card w-full max-w-sm mx-4">
+            <h3 className="text-lg font-semibold text-slate-900 mb-4">Registrér fravær</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm text-slate-600">Type</label>
+                <select
+                  value={absenceType}
+                  onChange={(e) => setAbsenceType(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-base text-slate-900"
+                >
+                  <option value="">Vælg type</option>
+                  <option value="Sygdom">Sygdom</option>
+                  <option value="Ferie">Ferie</option>
+                  <option value="Andet">Andet</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-sm text-slate-600">Note</label>
+                <textarea
+                  value={absenceNote}
+                  onChange={(e) => setAbsenceNote(e.target.value)}
+                  placeholder="Eventuel note..."
+                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 h-20 resize-none"
+                />
+              </div>
+              <div className="flex gap-3">
+                <Button onClick={handleRegisterAbsence} disabled={!absenceType}>
+                  Registrér
+                </Button>
+                <Button variant="ghost" onClick={() => setShowAbsenceModal(false)}>
+                  Annullér
+                </Button>
+              </div>
             </div>
           </div>
-        </Card>
+        </div>
       )}
-
-      <Card title="Seneste registreringer" description="Kontroller dine sidste check-ins og saldoændringer.">
-        <Table headers={['Start', 'Slut', 'Saldo']}>
-          {sessions.map((session) => (
-            <TableRow key={session.id}>
-              <TableCell>{format(new Date(session.start), 'dd. MMM HH:mm')}</TableCell>
-              <TableCell>{session.end ? format(new Date(session.end), 'dd. MMM HH:mm') : '—'}</TableCell>
-              <TableCell>
-                {session.balance && (
-                  <Badge variant={session.balance.startsWith('-') ? 'warning' : 'success'}>{session.balance}</Badge>
-                )}
-              </TableCell>
-            </TableRow>
-          ))}
-        </Table>
-      </Card>
     </div>
   );
 }
