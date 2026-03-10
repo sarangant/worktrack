@@ -57,3 +57,7 @@ a {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.3);
 }
+
+span.absolute.-top-1.-right-1.h-2\.5.w-2\.5.rounded-full.bg-accent {
+  background-color: red;
+}

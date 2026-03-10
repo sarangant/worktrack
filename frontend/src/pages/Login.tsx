@@ -40,16 +40,6 @@ export function LoginPage() {
       {/* Phone-like container */}
       <div className="w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col border-4 border-white" style={{ height: '812px' }}>
         <div className="h-full flex flex-col">
-          {/* Status bar */}
-          <div className="bg-gradient-to-b from-[#4352dc] to-[#4352dc] px-6 py-2 flex justify-between items-center text-white text-xs flex-shrink-0">
-            <span>9:41</span>
-            <div className="flex gap-1">
-              <div className="w-4 h-3 bg-white rounded-sm"></div>
-              <div className="w-4 h-3 bg-white rounded-sm"></div>
-              <div className="w-4 h-3 bg-white rounded-sm"></div>
-            </div>
-          </div>
-          
           {/* Login content */}
           <div className="flex-1 bg-gradient-to-b from-[#4352dc] to-[#4352dc] flex flex-col justify-center px-4">
             <div className="space-y-6">

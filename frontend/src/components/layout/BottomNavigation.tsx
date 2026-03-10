@@ -29,23 +29,28 @@ export function BottomNavigation() {
           to="/dashboard"
           className={({ isActive }) =>
             cn(
-              'flex flex-col items-center justify-center rounded-full transition-all duration-200 w-24 h-24',
+              'flex flex-col items-center justify-center rounded-full transition-all duration-200 w-[91px] h-[91px]',
               isActive
                 ? 'text-accent'
                 : 'text-slate-500 hover:text-slate-700'
             )
           }
         >
-          <div className="bg-accent rounded-full p-6 shadow-lg border-2 border-white">
-            <Home size={40} className="text-white" />
-          </div>
+          {({ isActive }) => (
+            <div className={cn(
+              'bg-accent rounded-full p-6 shadow-lg border-2 border-white transition-transform',
+              isActive ? 'scale-110' : 'scale-100 hover:scale-105'
+            )}>
+              <Home size={40} className="text-white" />
+            </div>
+          )}
         </NavLink>
       </div>
       
       {/* Bottom menu bar */}
-      <div className="flex justify-between items-center py-3 px-8">
+      <div className="flex justify-between items-center py-3 px-4">
         {/* Left side items */}
-        <div className="flex gap-6">
+        <div className="flex gap-2">
           {leftNavItems.map(({ to, label, icon: Icon }) => {
             const isActive = location.pathname === to;
             return (
@@ -69,7 +74,7 @@ export function BottomNavigation() {
         </div>
         
         {/* Right side items */}
-        <div className="flex gap-6">
+        <div className="flex gap-2">
           {rightNavItems.map(({ to, label, icon: Icon }) => {
             const isActive = location.pathname === to;
             return (
