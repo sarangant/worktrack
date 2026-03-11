@@ -3,28 +3,23 @@ import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 
-const initialSessions: Array<{ id: string; start: string; end?: string; balance: string }> = [
-  { id: 's1', start: '2024-11-20T08:00:00Z', end: '2024-11-20T16:02:00Z', balance: '+12m' },
-  { id: 's2', start: '2024-11-19T08:15:00Z', end: '2024-11-19T15:55:00Z', balance: '-10m' },
-  { id: 's3', start: '2024-11-18T07:58:00Z', end: '2024-11-18T16:10:00Z', balance: '+18m' },
+type Session = { id: string; start: string; end?: string };
+type FlexStat = { label: string; value: string };
+
+const initialSessions: Session[] = [
+  { id: 's1', start: '2024-11-20T08:00:00Z', end: '2024-11-20T16:02:00Z' },
+  { id: 's2', start: '2024-11-19T08:15:00Z', end: '2024-11-19T15:55:00Z' },
+  { id: 's3', start: '2024-11-18T07:58:00Z', end: '2024-11-18T16:10:00Z' },
 ];
 
-const initialFlexStats: Array<{ label: string; value: string }> = [
-  { label: 'Akkumuleret flex', value: '+2t 35m' },
-  { label: 'Dagens saldo', value: '+12m' },
+const initialFlexStats: FlexStat[] = [
+  { label: 'Akkumuleret flex', value: '0' },
+  { label: 'Dagens saldo', value: '0' },
   { label: 'Sidste fravær', value: '13. nov · Ferie' },
 ];
 
 const loadFromStorage = () => {
-  const stored = localStorage.getItem('dashboardState');
-  if (stored) {
-    const parsed = JSON.parse(stored);
-    return {
-      sessions: parsed.sessions || initialSessions,
-      flexStats: parsed.flexStats || initialFlexStats,
-      checkedIn: parsed.checkedIn || false,
-    };
-  }
+  // Always return fresh state to avoid old data conflicts
   return {
     sessions: initialSessions,
     flexStats: initialFlexStats,
@@ -32,15 +27,15 @@ const loadFromStorage = () => {
   };
 };
 
-const saveToStorage = (state: ReturnType<typeof loadFromStorage>) => {
+const saveToStorage = (state: { sessions: Session[], flexStats?: FlexStat[], checkedIn: boolean }) => {
   localStorage.setItem('dashboardState', JSON.stringify(state));
 };
 
 export function DashboardPage() {
   const navigate = useNavigate();
+  
   const stored = loadFromStorage();
   const [sessions, setSessions] = useState(stored.sessions);
-  const [flexStats, setFlexStats] = useState(stored.flexStats);
   const [checkedIn, setCheckedIn] = useState(stored.checkedIn);
   const [showAbsenceModal, setShowAbsenceModal] = useState(false);
   const [absenceType, setAbsenceType] = useState('');
@@ -48,45 +43,56 @@ export function DashboardPage() {
 
   const handleCheckIn = () => {
     const now = new Date();
+    const timestamp = now.getTime();
     const newSession = {
-      id: `s${Date.now()}`,
+      id: `s${timestamp}`,
       start: now.toISOString(),
       end: undefined,
-      balance: '',
     };
     const updatedSessions = [newSession, ...sessions];
     setSessions(updatedSessions);
     setCheckedIn(true);
-    setFlexStats([
-      flexStats[0],
-      { ...flexStats[1], value: `Check-in kl. ${format(now, 'HH:mm')}` },
-      flexStats[2],
-    ]);
-    saveToStorage({ sessions: updatedSessions, flexStats: flexStats, checkedIn: true });
+    
+    // Calculate cumulative flex from original sessions (before adding new incomplete session)
+    const newCumulativeFlex = calculateCumulativeFlex(sessions);
+    const newFlexStats = [
+      { label: 'Akkumuleret flex', value: `${newCumulativeFlex > 0 ? '+' : ''}${newCumulativeFlex}t` },
+      { label: 'Dagens saldo', value: `Check-in kl. ${format(now, 'HH:mm')}` },
+      { label: 'Sidste fravær', value: '13. nov · Ferie' },
+    ];
+    setFlexStats(newFlexStats);
+    saveToStorage({ sessions: updatedSessions, flexStats: newFlexStats, checkedIn: true });
   };
 
   const handleCheckOut = () => {
     const now = new Date();
-    const activeSession = sessions.find((s: { id: string; start: string; end?: string; balance: string }) => !s.end);
+    const activeSession = sessions.find((s: Session) => !s.end);
     if (!activeSession) return;
     
     const updatedSession = { ...activeSession, end: now.toISOString() };
-    const updatedSessions = sessions.map((s: { id: string; start: string; end?: string; balance: string }) => s.id === activeSession.id ? updatedSession : s);
+    const updatedSessions = sessions.map((s: Session) => s.id === activeSession.id ? updatedSession : s);
     setSessions(updatedSessions);
     setCheckedIn(false);
     
-    // Calculate flex for today
-    const todayFlex = calculateTodayFlex(updatedSessions);
-    setFlexStats([
-      flexStats[0],
-      { ...flexStats[1], value: `Check-ud kl. ${format(now, 'HH:mm')}` },
-      { ...flexStats[2], value: `${todayFlex > 0 ? '+' : ''}${todayFlex}t` },
-    ]);
-    saveToStorage({ sessions: updatedSessions, flexStats: flexStats, checkedIn: false });
+    // Update flex stats with new cumulative calculation
+    const newCumulativeFlex = calculateCumulativeFlex(updatedSessions);
+    const todayFlex = calculateTodayFlex(updatedSessions.filter((s: Session) => {
+      const sessionDate = new Date(s.start);
+      const today = new Date();
+      return sessionDate.toDateString() === today.toDateString();
+    }));
+    const newFlexStats = [
+      { label: 'Akkumuleret flex', value: `${newCumulativeFlex > 0 ? '+' : ''}${newCumulativeFlex}t` },
+      { label: 'Dagens saldo', value: `${todayFlex > 0 ? '+' : ''}${todayFlex}t` },
+      { label: 'Sidste fravær', value: '13. nov · Ferie' },
+    ];
+    const updatedFlexStats = newFlexStats;
+    setFlexStats(updatedFlexStats);
+    saveToStorage({ sessions: updatedSessions, flexStats: updatedFlexStats, checkedIn: false });
   };
 
-  const calculateTodayFlex = (todaySessions: { id: string; start: string; end?: string; balance: string }[]) => {
-    const totalMinutes = todaySessions.reduce((acc, session) => {
+  const calculateTodayFlex = (todaySessions: Session[]) => {
+    const totalMinutes = todaySessions.reduce((acc, session: Session) => {
       if (session.start && session.end) {
         const start = new Date(session.start);
         const end = new Date(session.end);
@@ -98,6 +104,26 @@ export function DashboardPage() {
     
     const normalWorkMinutes = 8 * 60; // 8 hours = 480 minutes
     return Math.round((totalMinutes - normalWorkMinutes) / 60 * 10) / 10; // Round to 1 decimal
+  };
+
+  const calculateCumulativeFlex = (allSessions: Session[]) => {
+    const totalWorkMinutes = allSessions.reduce((acc, session: Session) => {
+      if (session.start && session.end) {
+        const start = new Date(session.start);
+        const end = new Date(session.end);
+        const workMinutes = (end.getTime() - start.getTime()) / (1000 * 60);
+        return acc + workMinutes;
+      }
+      return acc;
+    }, 0);
+    
+    // Only count completed sessions (with end time) as workdays
+    const totalWorkDays = allSessions.filter((s: Session) => s.start && s.end).length;
+    const expectedWorkMinutes = totalWorkDays * 8 * 60; // 8 hours per workday
+    const flexMinutes = totalWorkMinutes - expectedWorkMinutes;
+    const flexHours = Math.round(flexMinutes / 60 * 10) / 10; // Convert to hours, round to 1 decimal
+    
+    return flexHours;
   };
 
   const handleRegisterAbsence = () => {
@@ -120,13 +146,21 @@ export function DashboardPage() {
     setAbsenceNote('');
   };
 
-  const todaySessions = sessions.filter((s: { id: string; start: string; end?: string; balance: string }) => {
+  const todaySessions = sessions.filter((s: Session) => {
     const sessionDate = new Date(s.start);
     const today = new Date();
     return sessionDate.toDateString() === today.toDateString();
   });
 
   const todayFlex = calculateTodayFlex(todaySessions);
+  const cumulativeFlex = calculateCumulativeFlex(sessions);
+
+  // Update flex stats dynamically
+  const updatedFlexStats = [
+    { label: 'Akkumuleret flex', value: `${cumulativeFlex > 0 ? '+' : ''}${cumulativeFlex}t` },
+    { label: 'Dagens saldo', value: `${todayFlex > 0 ? '+' : ''}${todayFlex}t` },
+    { label: 'Sidste fravær', value: '13. nov · Ferie' },
+  ];
 
   // const userName = auth.user?.name ?? 'Medarbejder';
 
@@ -171,7 +205,7 @@ export function DashboardPage() {
           <div className="flex justify-between items-center">
             <span className="text-slate-600">Total</span>
             <span className="text-2xl font-bold text-slate-900">
-              {flexStats[0].value}
+              {updatedFlexStats[0].value}
             </span>
           </div>
         </div>
@@ -204,7 +238,7 @@ export function DashboardPage() {
       <div className="white-card p-6">
         <h3 className="text-lg font-semibold text-slate-900 mb-4">Seneste aktivitet</h3>
         <div className="space-y-3">
-          {sessions.slice(0, 3).map((session: { id: string; start: string; end?: string; balance: string }) => (
+          {sessions.slice(0, 3).map((session: Session) => (
             <div key={session.id} className="flex justify-between items-center py-2 border-b border-slate-100">
               <div>
                 <div className="font-medium text-slate-900">
