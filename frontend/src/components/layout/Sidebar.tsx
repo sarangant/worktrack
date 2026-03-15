@@ -17,12 +17,6 @@ import { Roles } from '../../types';
 import { useAtom } from 'jotai';
 import { authAtom, clearAuthToken } from '../../state/auth';
 
-const baseLink =
-  'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-colors hover:bg-panel';
-
-const activeClass = 'bg-panel text-accent border border-border';
-const inactiveClass = 'text-slate-200';
-
 const employeeLinks = [
   { to: '/dashboard', label: 'Dashboard', icon: Home },
   { to: '/history', label: 'Historik', icon: History },
@@ -57,32 +51,33 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
   };
 
   return (
-    <aside className="w-full h-full bg-[#0d152e] border-r border-border px-4 py-6 flex flex-col gap-4">
-      <div className="flex items-center justify-between px-2">
+    <aside className="h-full bg-surface border-r border-border flex flex-col">
+      {/* Logo section */}
+      <div className="p-6 border-b border-border">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-accent/20 border border-accent/40 flex items-center justify-center text-accent font-black">
             WT
           </div>
           <div>
-            <p className="text-lg font-bold text-white">Worktrack</p>
-            <p className="text-xs text-muted">Tidsregistrering</p>
+            <p className="text-lg font-bold text-text-primary">Worktrack</p>
+            <p className="text-xs text-text-muted">Tidsregistrering</p>
           </div>
         </div>
-        <button
-          onClick={onClose}
-          className="rounded-lg border border-border bg-panel p-2 hover:border-accent transition"
-        >
-          ✕
-        </button>
       </div>
 
-      <nav className="flex-1 flex flex-col gap-1 overflow-y-auto">
+      {/* Navigation */}
+      <nav className="flex-1 p-4 flex flex-col gap-1 overflow-y-auto">
         {links.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}
             onClick={handleLinkClick}
-            className={({ isActive }) => cn(baseLink, isActive ? activeClass : inactiveClass)}
+            className={({ isActive }) => cn(
+              'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors',
+              isActive 
+                ? 'bg-accent/10 text-accent border border-accent/20' 
+                : 'text-text-secondary hover:bg-panel hover:text-text-primary'
+            )}
           >
             <Icon size={18} />
             <span>{label}</span>
@@ -90,17 +85,21 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
         ))}
       </nav>
 
-      <div className="border-t border-border pt-3">
+      {/* User section */}
+      <div className="p-4 border-t border-border">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold text-slate-200 hover:bg-panel transition-colors"
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-text-secondary hover:bg-panel hover:text-text-primary transition-colors"
         >
           <LogOut size={18} />
           Log ud
         </button>
-        <p className="mt-2 text-xs text-muted px-2">
-          {auth.user?.name} · {auth.user?.role === Roles.Admin ? 'Administrator' : 'Medarbejder'}
-        </p>
+        <div className="mt-3 px-4">
+          <p className="text-sm font-medium text-text-primary">{auth.user?.name}</p>
+          <p className="text-xs text-text-muted">
+            {auth.user?.role === Roles.Admin ? 'Administrator' : 'Medarbejder'}
+          </p>
+        </div>
       </div>
     </aside>
   );

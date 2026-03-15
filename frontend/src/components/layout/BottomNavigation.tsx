@@ -1,3 +1,4 @@
+import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   Home,
@@ -50,49 +51,57 @@ export function BottomNavigation() {
       {/* Bottom menu bar */}
       <div className="flex justify-between items-center py-3 px-4">
         {/* Left side items */}
-        <div className="flex gap-2">
-          {leftNavItems.map(({ to, label, icon: Icon }) => {
+        <div className="flex gap-4">
+          {leftNavItems.map(({ to, icon: Icon }, index) => {
             const isActive = location.pathname === to;
             return (
-              <NavLink
-                key={to}
-                to={to}
-                className={({ isActive }) =>
-                  cn(
-                    'flex flex-col items-center justify-center py-3 px-2 rounded-lg transition-all duration-200',
-                    isActive
-                      ? 'text-accent'
-                      : 'text-slate-500 hover:text-slate-700'
-                  )
-                }
-              >
-                <Icon size={20} className={cn('transition-transform', isActive ? 'scale-110' : 'scale-100')} />
-                <span className="text-xs mt-1 font-medium">{label}</span>
-              </NavLink>
+              <React.Fragment key={to}>
+                <NavLink
+                  to={to}
+                  className={({ isActive }) =>
+                    cn(
+                      'flex flex-col items-center justify-center py-3 px-2 rounded-lg transition-all duration-200',
+                      isActive
+                        ? 'text-accent'
+                        : 'text-slate-500 hover:text-slate-700'
+                    )
+                  }
+                >
+                  <Icon size={24} className={cn('transition-transform', isActive ? 'scale-110' : 'scale-100')} />
+                </NavLink>
+                {/* Add separator after History (index 0) */}
+                {index === 0 && (
+                  <div className="w-px h-6 bg-slate-300 mt-5"></div>
+                )}
+              </React.Fragment>
             );
           })}
         </div>
         
         {/* Right side items */}
-        <div className="flex gap-2">
-          {rightNavItems.map(({ to, label, icon: Icon }) => {
+        <div className="flex gap-4">
+          {rightNavItems.map(({ to, icon: Icon }, index) => {
             const isActive = location.pathname === to;
             return (
-              <NavLink
-                key={to}
-                to={to}
-                className={({ isActive }) =>
-                  cn(
-                    'flex flex-col items-center justify-center py-3 px-2 rounded-lg transition-all duration-200',
-                    isActive
-                      ? 'text-accent'
-                      : 'text-slate-500 hover:text-slate-700'
-                  )
-                }
-              >
-                <Icon size={20} className={cn('transition-transform', isActive ? 'scale-110' : 'scale-100')} />
-                <span className="text-xs mt-1 font-medium">{label}</span>
-              </NavLink>
+              <React.Fragment key={to}>
+                <NavLink
+                  to={to}
+                  className={({ isActive }) =>
+                    cn(
+                      'flex flex-col items-center justify-center py-3 px-2 rounded-lg transition-all duration-200',
+                      isActive
+                        ? 'text-accent'
+                        : 'text-slate-500 hover:text-slate-700'
+                    )
+                  }
+                >
+                  <Icon size={24} className={cn('transition-transform', isActive ? 'scale-110' : 'scale-100')} />
+                </NavLink>
+                {/* Add separator after Profile (index 0) */}
+                {index === 0 && (
+                  <div className="w-px h-6 bg-slate-300 mt-5"></div>
+                )}
+              </React.Fragment>
             );
           })}
         </div>

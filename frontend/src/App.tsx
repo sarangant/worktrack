@@ -1,5 +1,5 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
-import { AppShell } from './components/layout/AppShell';
+import { ResponsiveAppShell } from './components/layout/ResponsiveAppShell';
 import { LoginPage } from './pages/Login';
 import { DashboardPage } from './pages/Dashboard';
 import { HistoryPage } from './pages/History';
@@ -24,9 +24,9 @@ export default function App() {
         path="/dashboard"
         element={
           <AuthGate>
-            <AppShell>
+            <ResponsiveAppShell>
               <DashboardPage />
-            </AppShell>
+            </ResponsiveAppShell>
           </AuthGate>
         }
       />
@@ -34,9 +34,9 @@ export default function App() {
         path="/history"
         element={
           <AuthGate>
-            <AppShell>
+            <ResponsiveAppShell>
               <HistoryPage />
-            </AppShell>
+            </ResponsiveAppShell>
           </AuthGate>
         }
       />
@@ -44,9 +44,9 @@ export default function App() {
         path="/reports"
         element={
           <AuthGate>
-            <AppShell>
+            <ResponsiveAppShell>
               <ReportsPage />
-            </AppShell>
+            </ResponsiveAppShell>
           </AuthGate>
         }
       />
@@ -54,9 +54,9 @@ export default function App() {
         path="/profile"
         element={
           <AuthGate>
-            <AppShell>
+            <ResponsiveAppShell>
               <ProfilePage />
-            </AppShell>
+            </ResponsiveAppShell>
           </AuthGate>
         }
       />
@@ -64,9 +64,9 @@ export default function App() {
         path="/settings"
         element={
           <AuthGate>
-            <AppShell>
+            <ResponsiveAppShell>
               <SettingsPage />
-            </AppShell>
+            </ResponsiveAppShell>
           </AuthGate>
         }
       />
@@ -74,9 +74,9 @@ export default function App() {
         path="/notes"
         element={
           <AuthGate>
-            <AppShell>
+            <ResponsiveAppShell>
               <NotesPage />
-            </AppShell>
+            </ResponsiveAppShell>
           </AuthGate>
         }
       />
@@ -84,9 +84,9 @@ export default function App() {
         path="/sample-reports"
         element={
           <AuthGate>
-            <AppShell>
+            <ResponsiveAppShell>
               <SampleReportsPage />
-            </AppShell>
+            </ResponsiveAppShell>
           </AuthGate>
         }
       />
@@ -95,9 +95,9 @@ export default function App() {
         path="/admin/users"
         element={
           <AuthGate>
-            <AppShell>
+            <ResponsiveAppShell>
               <UsersPage />
-            </AppShell>
+            </ResponsiveAppShell>
           </AuthGate>
         }
       />
@@ -105,9 +105,9 @@ export default function App() {
         path="/admin/calendars"
         element={
           <AuthGate>
-            <AppShell>
+            <ResponsiveAppShell>
               <CalendarsPage />
-            </AppShell>
+            </ResponsiveAppShell>
           </AuthGate>
         }
       />
@@ -115,9 +115,9 @@ export default function App() {
         path="/admin/absence-types"
         element={
           <AuthGate>
-            <AppShell>
+            <ResponsiveAppShell>
               <AbsenceTypesPage />
-            </AppShell>
+            </ResponsiveAppShell>
           </AuthGate>
         }
       />
@@ -125,9 +125,9 @@ export default function App() {
         path="/admin/corrections"
         element={
           <AuthGate>
-            <AppShell>
+            <ResponsiveAppShell>
               <CorrectionsPage />
-            </AppShell>
+            </ResponsiveAppShell>
           </AuthGate>
         }
       />
@@ -135,9 +135,9 @@ export default function App() {
         path="/admin/status"
         element={
           <AuthGate>
-            <AppShell>
+            <ResponsiveAppShell>
               <StatusBoardPage />
-            </AppShell>
+            </ResponsiveAppShell>
           </AuthGate>
         }
       />
@@ -145,9 +145,9 @@ export default function App() {
         path="/admin/reports"
         element={
           <AuthGate>
-            <AppShell>
+            <ResponsiveAppShell>
               <AdminReportsPage />
-            </AppShell>
+            </ResponsiveAppShell>
           </AuthGate>
         }
       />
