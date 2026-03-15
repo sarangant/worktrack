@@ -8,9 +8,9 @@ type Props = {
 
 export function AppShell({ children }: Props) {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#4352dc] to-[#4352dc] flex flex-col">
+    <div className="min-h-screen bg-surface flex flex-col">
       {/* Fixed Top Navigation - always visible */}
-      <div className="fixed top-0 left-0 right-0 bg-white border-b border-slate-200 z-50">
+      <div className="fixed top-0 left-0 right-0 bg-panel border-b border-border z-50">
         <Topbar />
       </div>
       
@@ -22,7 +22,7 @@ export function AppShell({ children }: Props) {
       </div>
       
       {/* Fixed Bottom Navigation - always visible */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-50">
+      <div className="fixed bottom-0 left-0 right-0 bg-panel border-t border-border z-50">
         <BottomNavigation />
       </div>
     </div>

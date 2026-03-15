@@ -163,22 +163,29 @@ export function DashboardPage() {
     { label: 'Sidste fravær', value: flexStats[2]?.value || '13. nov · Ferie' },
   ];
 
-  // const userName = auth.user?.name ?? 'Medarbejder';
+  const calculateSessionHours = (session: Session) => {
+    const start = new Date(session.start);
+    const end = new Date(session.end || new Date());
+    const workMinutes = (end.getTime() - start.getTime()) / (1000 * 60);
+    const hours = Math.floor(workMinutes / 60);
+    const minutes = Math.round(workMinutes % 60);
+    return `${hours}t ${minutes}m`;
+  };
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-white">Overblik</h1>
-        <p className="text-slate-300">Din arbejdsdag og flexsaldo.</p>
+        <h1 className="text-2xl font-bold text-text-primary">Overblik</h1>
+        <p className="text-text-secondary mt-1">Din arbejdsdag og flexsaldo.</p>
       </div>
 
       {/* Check-in/Check-out Card */}
-      <div className="white-card p-6">
+      <div className="desktop-card p-6">
         <div className="text-center space-y-4">
-          <div className="text-6xl font-bold text-slate-900">
+          <div className="text-6xl font-bold text-text-primary">
             {format(new Date(), 'HH:mm')}
           </div>
-          <div className="text-lg text-slate-600">
+          <div className="text-lg text-text-secondary font-medium">
             {checkedIn ? 'Tjekket ind' : 'Tjekket ud'}
           </div>
           <div className="flex gap-3">
@@ -194,18 +201,18 @@ export function DashboardPage() {
       </div>
 
       {/* Flex Balance Card */}
-      <div className="white-card p-6">
-        <h3 className="text-lg font-semibold text-slate-900 mb-4">Flexsaldo</h3>
+      <div className="desktop-card p-6">
+        <h3 className="text-lg font-bold text-text-primary mb-4">Flexsaldo</h3>
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <span className="text-slate-600">I dag</span>
-            <span className={`text-2xl font-bold ${todayFlex >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            <span className="text-text-secondary font-medium">I dag</span>
+            <span className={`text-2xl font-bold ${todayFlex >= 0 ? 'text-accent' : 'text-danger'}`}>
               {todayFlex > 0 ? '+' : ''}{todayFlex}t
             </span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-slate-600">Total</span>
-            <span className="text-2xl font-bold text-slate-900">
+            <span className="text-text-secondary font-medium">Total</span>
+            <span className="text-2xl font-bold text-text-primary">
               {displayFlexStats[0].value}
             </span>
           </div>
@@ -213,8 +220,8 @@ export function DashboardPage() {
       </div>
 
       {/* Quick Actions */}
-      <div className="white-card p-6">
-        <h3 className="text-lg font-semibold text-slate-900 mb-4">Hurtige handlinger</h3>
+      <div className="desktop-card p-6">
+        <h3 className="text-lg font-bold text-text-primary mb-4">Hurtige handlinger</h3>
         <div className="grid grid-cols-2 gap-3">
           <Button 
             variant="secondary"
@@ -236,67 +243,80 @@ export function DashboardPage() {
       </div>
 
       {/* Recent Activity */}
-      <div className="white-card p-6">
-        <h3 className="text-lg font-semibold text-slate-900 mb-4">Seneste aktivitet</h3>
+      <div className="desktop-card p-6">
+        <h3 className="text-lg font-bold text-text-primary mb-4">Seneste aktivitet</h3>
         <div className="space-y-3">
           {sessions.slice(0, 3).map((session: Session) => (
-            <div key={session.id} className="flex justify-between items-center py-2 border-b border-slate-100">
+            <div key={session.id} className="flex justify-between items-center py-3 border-b border-border last:border-b-0">
               <div>
-                <div className="font-medium text-slate-900">
+                <div className="font-semibold text-text-primary">
                   {format(new Date(session.start), 'dd. MMM yyyy')}
                 </div>
-                <div className="text-sm text-slate-600">
+                <div className="text-sm text-text-secondary mt-1">
                   {format(new Date(session.start), 'HH:mm')} - 
-                  {session.end ? format(new Date(session.end), 'HH:mm') : '...'}
+                  {session.end ? format(new Date(session.end), 'HH:mm') : 'Aktiv'}
                 </div>
               </div>
-              <div className="text-sm text-slate-600">
-                {session.end ? 'Afsluttet' : 'Aktiv'}
+              <div className="text-right">
+                <div className="text-sm font-medium text-text-primary">
+                  {session.end ? 
+                    calculateSessionHours(session) : 
+                    'I gang'
+                  }
+                </div>
               </div>
             </div>
           ))}
         </div>
-        {sessions.length > 5 && (
-          <Button variant="ghost" onClick={() => navigate('/history')} className="w-full mt-4 text-accent hover:text-accent/90">
-            Se alle
-          </Button>
-        )}
       </div>
 
-      {/* Absence Registration Modal */}
+      {/* Absence Modal */}
       {showAbsenceModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="white-card w-full max-w-sm mx-4">
-            <h3 className="text-lg font-semibold text-slate-900 mb-4">Registrér fravær</h3>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="desktop-card p-6 w-full max-w-md">
+            <h3 className="text-lg font-bold text-text-primary mb-4">Registrér fravær</h3>
             <div className="space-y-4">
               <div>
-                <label className="text-sm text-slate-600">Type</label>
-                <select
+                <label className="block text-sm font-medium text-text-secondary mb-2">
+                  Type fravær
+                </label>
+                <select 
                   value={absenceType}
                   onChange={(e) => setAbsenceType(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-base text-slate-900"
+                  className="w-full px-3 py-2 bg-panel border border-border rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/50"
                 >
                   <option value="">Vælg type</option>
-                  <option value="Sygdom">Sygdom</option>
-                  <option value="Ferie">Ferie</option>
-                  <option value="Andet">Andet</option>
+                  <option value="ferie">Ferie</option>
+                  <option value="sygdom">Sygdom</option>
+                  <option value="anden">Anden</option>
                 </select>
               </div>
               <div>
-                <label className="text-sm text-slate-600">Note</label>
+                <label className="block text-sm font-medium text-text-secondary mb-2">
+                  Note (valgfrit)
+                </label>
                 <textarea
                   value={absenceNote}
                   onChange={(e) => setAbsenceNote(e.target.value)}
-                  placeholder="Eventuel note..."
-                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 h-20 resize-none"
+                  placeholder="Tilføj note..."
+                  className="w-full px-3 py-2 bg-panel border border-border rounded-lg text-text-primary placeholder-text-text-muted focus:outline-none focus:ring-2 focus:ring-accent/50 resize-none"
+                  rows={3}
                 />
               </div>
               <div className="flex gap-3">
-                <Button onClick={handleRegisterAbsence} disabled={!absenceType}>
-                  Registrér
+                <Button 
+                  variant="secondary"
+                  onClick={() => setShowAbsenceModal(false)}
+                  className="flex-1"
+                >
+                  Annuller
                 </Button>
-                <Button variant="ghost" onClick={() => setShowAbsenceModal(false)}>
-                  Annullér
+                <Button 
+                  onClick={handleRegisterAbsence}
+                  className="flex-1"
+                  disabled={!absenceType}
+                >
+                  Registrér
                 </Button>
               </div>
             </div>

@@ -174,38 +174,46 @@ export function LoginPage() {
         </div>
       ) : (
         /* Mobile version - full screen web app style */
-        <div className="w-full h-screen bg-gradient-to-b from-[#4352dc] to-[#4352dc] flex flex-col">
+        <div className="w-full h-screen bg-surface flex flex-col">
           <div className="flex-grow flex flex-col justify-center p-6">
             <div className="space-y-6">
               <div className="text-center space-y-4">
-                <div className="h-12 w-12 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center text-white font-black mx-auto">
+                <div className="h-12 w-12 rounded-xl bg-accent/20 border border-accent/40 flex items-center justify-center text-accent font-black mx-auto">
                   WT
                 </div>
                 <div>
-                  <p className="text-white font-semibold">Worktrack</p>
-                  <h1 className="text-2xl font-bold text-white leading-snug">
+                  <p className="text-accent font-semibold">Worktrack</p>
+                  <h1 className="text-2xl font-bold text-text-primary leading-snug">
                     Tidsregistrering
                   </h1>
-                  <p className="text-blue-100 text-sm mt-2">
+                  <p className="text-text-secondary">
                     Log ind med e-mail eller medarbejder-ID
                   </p>
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl p-6 shadow-lg">
-                <h2 className="text-lg font-semibold text-slate-900 mb-2">Log ind</h2>
-                <p className="text-sm text-slate-600 mb-4">Adgang for medarbejdere og administratorer</p>
+              <div className="desktop-card p-6">
+                <h2 className="text-lg font-semibold text-text-primary mb-2">Log ind</h2>
+                <p className="text-sm text-text-secondary mb-4">Adgang for medarbejdere og administratorer</p>
                 
-                <div className="flex rounded-lg bg-slate-100 p-1 text-sm font-semibold mb-4">
+                <div className="flex rounded-lg bg-panel p-1 text-sm font-medium mb-4">
                   <button
-                    className={`flex-1 rounded-md px-3 py-2 ${mode === 'email' ? 'bg-white text-slate-900 border-2 border-accent' : 'text-slate-500'}`}
+                    className={`flex-1 rounded-md px-3 py-2 transition-colors ${
+                      mode === 'email' 
+                        ? 'bg-accent text-white' 
+                        : 'text-text-secondary hover:text-text-primary'
+                    }`}
                     onClick={() => setMode('email')}
                     type="button"
                   >
                     E-mail
                   </button>
                   <button
-                    className={`flex-1 rounded-md px-3 py-2 ${mode === 'employeeId' ? 'bg-white text-slate-900 border-2 border-accent' : 'text-slate-500'}`}
+                    className={`flex-1 rounded-md px-3 py-2 transition-colors ${
+                      mode === 'employeeId' 
+                        ? 'bg-accent text-white' 
+                        : 'text-text-secondary hover:text-text-primary'
+                    }`}
                     onClick={() => setMode('employeeId')}
                     type="button"
                   >
@@ -216,7 +224,7 @@ export function LoginPage() {
                 <form onSubmit={onSubmit} className="space-y-4">
                   {mode === 'email' ? (
                     <div className="space-y-2">
-                      <label className="text-sm text-slate-600">E-mail</label>
+                      <label className="text-sm text-text-secondary">E-mail</label>
                       <Input
                         type="email"
                         required
@@ -227,7 +235,7 @@ export function LoginPage() {
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      <label className="text-sm text-slate-600">Medarbejder-ID</label>
+                      <label className="text-sm text-text-secondary">Medarbejder-ID</label>
                       <Input
                         required
                         value={employeeId}
@@ -238,17 +246,17 @@ export function LoginPage() {
                   )}
 
                   <div className="space-y-2">
-                    <label className="text-sm text-slate-600">Kode</label>
+                    <label className="text-sm text-text-secondary">Kode</label>
                     <Input
                       type="password"
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="•••••••"
+                      placeholder="••••••••"
                     />
                   </div>
 
-                  {error && <p className="text-sm text-red-600">{error}</p>}
+                  {error && <p className="text-sm text-danger">{error}</p>}
 
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? 'Logger ind...' : 'Log ind'}
@@ -256,7 +264,7 @@ export function LoginPage() {
                 </form>
               </div>
 
-              <div className="text-center text-xs text-blue-100 space-y-1">
+              <div className="text-center text-xs text-text-muted space-y-1">
                 <p>• Swipe check ind / ud</p>
                 <p>• Automatisk flexberegning</p>
                 <p>• Fraværshåndtering</p>

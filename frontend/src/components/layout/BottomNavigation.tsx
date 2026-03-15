@@ -23,7 +23,7 @@ export function BottomNavigation() {
   ];
 
   return (
-    <nav className="bg-white border-t border-slate-200 relative">
+    <nav className="bg-panel border-t border-border relative">
       {/* Home button above menu */}
       <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 z-10">
         <NavLink
@@ -33,13 +33,13 @@ export function BottomNavigation() {
               'flex flex-col items-center justify-center rounded-full transition-all duration-200 w-[91px] h-[91px]',
               isActive
                 ? 'text-accent'
-                : 'text-slate-500 hover:text-slate-700'
+                : 'text-text-muted hover:text-text-primary'
             )
           }
         >
           {({ isActive }) => (
             <div className={cn(
-              'bg-accent rounded-full p-6 shadow-lg border-2 border-white transition-transform',
+              'bg-accent rounded-full p-6 shadow-lg border-2 border-panel transition-transform',
               isActive ? 'scale-110' : 'scale-100 hover:scale-105'
             )}>
               <Home size={40} className="text-white" />
@@ -49,7 +49,7 @@ export function BottomNavigation() {
       </div>
       
       {/* Bottom menu bar */}
-      <div className="flex justify-between items-center py-3 px-4">
+      <div className="flex justify-between items-center py-4 px-6">
         {/* Left side items */}
         <div className="flex gap-4">
           {leftNavItems.map(({ to, icon: Icon }, index) => {
@@ -60,10 +60,10 @@ export function BottomNavigation() {
                   to={to}
                   className={({ isActive }) =>
                     cn(
-                      'flex flex-col items-center justify-center py-3 px-2 rounded-lg transition-all duration-200',
+                      'flex flex-col items-center justify-center py-3 px-3 rounded-lg transition-all duration-200',
                       isActive
-                        ? 'text-accent'
-                        : 'text-slate-500 hover:text-slate-700'
+                        ? 'text-accent bg-accent/10'
+                        : 'text-text-muted hover:text-text-primary hover:bg-panel-high'
                     )
                   }
                 >
@@ -71,7 +71,7 @@ export function BottomNavigation() {
                 </NavLink>
                 {/* Add separator after History (index 0) */}
                 {index === 0 && (
-                  <div className="w-px h-6 bg-slate-300 mt-5"></div>
+                  <div className="w-px h-6 bg-border mt-5"></div>
                 )}
               </React.Fragment>
             );
@@ -88,10 +88,10 @@ export function BottomNavigation() {
                   to={to}
                   className={({ isActive }) =>
                     cn(
-                      'flex flex-col items-center justify-center py-3 px-2 rounded-lg transition-all duration-200',
+                      'flex flex-col items-center justify-center py-3 px-3 rounded-lg transition-all duration-200',
                       isActive
-                        ? 'text-accent'
-                        : 'text-slate-500 hover:text-slate-700'
+                        ? 'text-accent bg-accent/10'
+                        : 'text-text-muted hover:text-text-primary hover:bg-panel-high'
                     )
                   }
                 >
@@ -99,7 +99,7 @@ export function BottomNavigation() {
                 </NavLink>
                 {/* Add separator after Profile (index 0) */}
                 {index === 0 && (
-                  <div className="w-px h-6 bg-slate-300 mt-5"></div>
+                  <div className="w-px h-6 bg-border mt-5"></div>
                 )}
               </React.Fragment>
             );
