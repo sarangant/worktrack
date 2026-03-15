@@ -36,6 +36,7 @@ export function DashboardPage() {
   
   const stored = loadFromStorage();
   const [sessions, setSessions] = useState(stored.sessions);
+  const [flexStats, setFlexStats] = useState(stored.flexStats);
   const [checkedIn, setCheckedIn] = useState(stored.checkedIn);
   const [showAbsenceModal, setShowAbsenceModal] = useState(false);
   const [absenceType, setAbsenceType] = useState('');
@@ -155,11 +156,11 @@ export function DashboardPage() {
   const todayFlex = calculateTodayFlex(todaySessions);
   const cumulativeFlex = calculateCumulativeFlex(sessions);
 
-  // Update flex stats dynamically
-  const updatedFlexStats = [
+  // Update flex stats dynamically for display
+  const displayFlexStats = [
     { label: 'Akkumuleret flex', value: `${cumulativeFlex > 0 ? '+' : ''}${cumulativeFlex}t` },
     { label: 'Dagens saldo', value: `${todayFlex > 0 ? '+' : ''}${todayFlex}t` },
-    { label: 'Sidste fravær', value: '13. nov · Ferie' },
+    { label: 'Sidste fravær', value: flexStats[2]?.value || '13. nov · Ferie' },
   ];
 
   // const userName = auth.user?.name ?? 'Medarbejder';
@@ -205,7 +206,7 @@ export function DashboardPage() {
           <div className="flex justify-between items-center">
             <span className="text-slate-600">Total</span>
             <span className="text-2xl font-bold text-slate-900">
-              {updatedFlexStats[0].value}
+              {displayFlexStats[0].value}
             </span>
           </div>
         </div>
