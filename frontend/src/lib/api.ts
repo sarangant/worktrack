@@ -3,7 +3,7 @@ import { getAuthToken, setAuthToken, clearAuthToken } from '../state/auth';
 import { Roles } from '../types';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
+  baseURL: import.meta.env.VITE_API_URL || 'https://worktrack-git-main-sarangants-projects.vercel.app/api',
 });
 
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {

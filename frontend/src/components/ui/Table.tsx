@@ -9,8 +9,8 @@ type TableProps = {
 export function Table({ headers, children, className }: TableProps) {
   return (
     <div className={cn('overflow-x-auto -mx-4 px-4', className)}>
-      <table className="w-full min-w-[500px] text-sm text-left text-slate-900">
-        <thead className="text-xs uppercase text-slate-600 border-b border-slate-200 bg-slate-50 sticky top-0">
+      <table className="w-full min-w-[500px] text-sm text-left text-text-primary">
+        <thead className="text-xs uppercase text-text-muted border-b border-border bg-panel-high sticky top-0">
           <tr>
             {headers.map((header) => (
               <th key={header} className="px-4 py-3 font-semibold whitespace-nowrap">
@@ -19,7 +19,7 @@ export function Table({ headers, children, className }: TableProps) {
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-200">{children}</tbody>
+        <tbody className="divide-y divide-border">{children}</tbody>
       </table>
     </div>
   );
@@ -36,9 +36,9 @@ type CellProps = {
 };
 
 export function TableRow({ children, className }: RowProps) {
-  return <tr className={cn('hover:bg-slate-50 transition-colors', className)}>{children}</tr>;
+  return <tr className={cn('hover:bg-panel-high transition-colors', className)}>{children}</tr>;
 }
 
 export function TableCell({ children, className }: CellProps) {
-  return <td className={cn('px-4 py-4 align-middle text-slate-900 whitespace-nowrap', className)}>{children}</td>;
+  return <td className={cn('px-4 py-4 align-middle text-text-primary whitespace-nowrap', className)}>{children}</td>;
 }
