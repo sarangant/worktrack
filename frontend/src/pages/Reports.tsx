@@ -56,7 +56,7 @@ export function ReportsPage() {
             <select
               value={form.format}
               onChange={(e) => setForm({ ...form, format: e.target.value })}
-              className="w-full rounded-lg border border-slate-300 bg-white px-4 py-4 text-base text-slate-900 min-h-[48px]"
+              className="w-full rounded-lg border border-border bg-panel px-4 py-4 text-base text-text-primary min-h-[48px]"
             >
               <option value="PDF">PDF</option>
               <option value="XLSX">Excel</option>
@@ -78,8 +78,8 @@ export function ReportsPage() {
             <div className="space-y-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h3 className="font-semibold text-slate-900">{report.name}</h3>
-                  <p className="text-sm text-slate-600 mt-1">{report.range}</p>
+                  <h3 className="font-semibold text-text-primary">{report.name}</h3>
+                  <p className="text-sm text-text-muted mt-1">{report.range}</p>
                 </div>
                 <Badge variant="success">{report.status}</Badge>
               </div>
@@ -103,7 +103,7 @@ export function ReportsPage() {
       {reports.length === 0 && (
         <Card>
           <div className="text-center py-8">
-            <p className="text-slate-600">Ingen rapporter endnu</p>
+            <p className="text-text-muted">Ingen rapporter endnu</p>
             <Button onClick={() => setShowAdd(true)} className="mt-4">
               Opret din første rapport
             </Button>

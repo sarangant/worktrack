@@ -1,16 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
+import { loadPersistedAuth } from '../state/auth';
 
-type Session = { id: string; start: string; end?: string };
+type Session = { id: string; start: string; end?: string; lunchDeducted?: boolean }; // Store timestamps as strings
+
 type FlexStat = { label: string; value: string };
 
-const initialSessions: Session[] = [
-  { id: 's1', start: '2024-11-20T08:00:00Z', end: '2024-11-20T16:02:00Z' },
-  { id: 's2', start: '2024-11-19T08:15:00Z', end: '2024-11-19T15:55:00Z' },
-  { id: 's3', start: '2024-11-18T07:58:00Z', end: '2024-11-18T16:10:00Z' },
-];
+const LUNCH_BREAK_MINUTES = 30; // 30 minutes lunch break
+const LUNCH_BREAK_TRIGGER_MINUTES = 4 * 60; // Auto-deduct after 4 hours
+
 
 const initialFlexStats: FlexStat[] = [
   { label: 'Akkumuleret flex', value: '0' },
@@ -19,9 +19,29 @@ const initialFlexStats: FlexStat[] = [
 ];
 
 const loadFromStorage = () => {
-  // Always return fresh state to avoid old data conflicts
+  // Load from localStorage, fallback to empty state for fresh login
+  const storedRaw = localStorage.getItem('dashboardState');
+  if (storedRaw) {
+    try {
+      const stored = JSON.parse(storedRaw);
+      return {
+        sessions: stored.sessions || [],
+        flexStats: stored.flexStats || initialFlexStats,
+        checkedIn: stored.checkedIn || false,
+      };
+    } catch {
+      // If parsing fails, return empty state
+      return {
+        sessions: [],
+        flexStats: initialFlexStats,
+        checkedIn: false,
+      };
+    }
+  }
+  
+  // Fallback to empty state for fresh login
   return {
-    sessions: initialSessions,
+    sessions: [],
     flexStats: initialFlexStats,
     checkedIn: false,
   };
@@ -34,31 +54,84 @@ const saveToStorage = (state: { sessions: Session[], flexStats?: FlexStat[], che
 export function DashboardPage() {
   const navigate = useNavigate();
   
+  // Load persisted auth on mount
+  const persistedAuth = loadPersistedAuth();
   const stored = loadFromStorage();
-  const [sessions, setSessions] = useState(stored.sessions);
-  const [flexStats, setFlexStats] = useState(stored.flexStats);
-  const [checkedIn, setCheckedIn] = useState(stored.checkedIn);
+  
+  // Check if current user matches stored user data
+  const currentUser = persistedAuth && persistedAuth.user ? persistedAuth.user : null;
+  const storedUserRaw = localStorage.getItem('user');
+  const storedUser = storedUserRaw ? JSON.parse(storedUserRaw) : null;
+  
+  // If different user or no stored user, start fresh
+  const shouldStartFresh = !persistedAuth || !storedUser || !currentUser || currentUser.id !== storedUser.id;
+  const sessionsToUse = shouldStartFresh ? [] : stored.sessions;
+  const flexStatsToUse = shouldStartFresh ? initialFlexStats : stored.flexStats;
+  const checkedInToUse = shouldStartFresh ? false : stored.checkedIn;
+  
+  const [sessions, setSessions] = useState(sessionsToUse);
+  const [flexStats, setFlexStats] = useState(flexStatsToUse);
+  const [checkedIn, setCheckedIn] = useState(checkedInToUse);
   const [showAbsenceModal, setShowAbsenceModal] = useState(false);
   const [absenceType, setAbsenceType] = useState('');
   const [absenceNote, setAbsenceNote] = useState('');
+  
+  // Real-time tracking state
+  const [currentSessionStart, setCurrentSessionStart] = useState<number | null>(null);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const intervalRef = useRef<number | null>(null);
+
+  // Real-time timer effect
+  useEffect(() => {
+    if (checkedIn && currentSessionStart) {
+      intervalRef.current = setInterval(() => {
+        const now = Date.now();
+        const elapsed = now - currentSessionStart;
+        setElapsedTime(elapsed);
+      }, 100); // Update every 100ms
+    } else {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    }
+    
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [checkedIn, currentSessionStart]);
+  
+  // Load active session on mount using separate effect
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => {
+    const activeSession = sessions.find((s: Session) => !s.end);
+    if (activeSession) {
+      setCurrentSessionStart(parseInt(activeSession.start));
+      setCheckedIn(true);
+    }
+  }, [sessions]);
 
   const handleCheckIn = () => {
-    const now = new Date();
-    const timestamp = now.getTime();
+    const timestamp = Number(new Date());
     const newSession = {
       id: `s${timestamp}`,
-      start: now.toISOString(),
+      start: timestamp.toString(),
       end: undefined,
+      lunchDeducted: false,
     };
     const updatedSessions = [newSession, ...sessions];
     setSessions(updatedSessions);
     setCheckedIn(true);
+    setCurrentSessionStart(timestamp);
     
-    // Calculate cumulative flex from original sessions (before adding new incomplete session)
-    const newCumulativeFlex = calculateCumulativeFlex(sessions);
+    // Calculate cumulative flex from existing sessions (before adding new incomplete session)
+    const existingSessions = sessions.filter((s: Session) => s.start && s.end);
+    const newCumulativeFlex = calculateCumulativeFlex(existingSessions);
     const newFlexStats = [
       { label: 'Akkumuleret flex', value: `${newCumulativeFlex > 0 ? '+' : ''}${newCumulativeFlex}t` },
-      { label: 'Dagens saldo', value: `Check-in kl. ${format(now, 'HH:mm')}` },
+      { label: 'Dagens saldo', value: '0t 0m' },
       { label: 'Sidste fravær', value: '13. nov · Ferie' },
     ];
     setFlexStats(newFlexStats);
@@ -66,61 +139,101 @@ export function DashboardPage() {
   };
 
   const handleCheckOut = () => {
-    const now = new Date();
+    const timestamp = Number(new Date());
     const activeSession = sessions.find((s: Session) => !s.end);
     if (!activeSession) return;
     
-    const updatedSession = { ...activeSession, end: now.toISOString() };
+    const startTime = parseInt(activeSession.start);
+    const totalElapsed = timestamp - startTime;
+    
+    // Calculate lunch break deduction
+    let lunchBreak = 0;
+    const totalElapsedMinutes = totalElapsed / (1000 * 60);
+    
+    if (totalElapsedMinutes >= LUNCH_BREAK_TRIGGER_MINUTES) {
+      lunchBreak = LUNCH_BREAK_MINUTES * 60 * 1000; // 30 minutes in milliseconds
+    }
+    
+    const updatedSession = { 
+      ...activeSession, 
+      end: timestamp.toString(),
+      lunchDeducted: lunchBreak > 0
+    };
     const updatedSessions = sessions.map((s: Session) => s.id === activeSession.id ? updatedSession : s);
     setSessions(updatedSessions);
     setCheckedIn(false);
+    setCurrentSessionStart(null);
+    setElapsedTime(0);
     
-    // Update flex stats with new cumulative calculation
-    const newCumulativeFlex = calculateCumulativeFlex(updatedSessions);
-    const todayFlex = calculateTodayFlex(updatedSessions.filter((s: Session) => {
-      const sessionDate = new Date(s.start);
+    // Calculate today's work time with lunch deduction
+    const todayWorkMinutes = calculateTodayWorkMinutes(updatedSessions.filter((s: Session) => {
+      const sessionDate = new Date(parseInt(s.start));
       const today = new Date();
       return sessionDate.toDateString() === today.toDateString();
     }));
+    
+    const newCumulativeFlex = calculateCumulativeFlex(updatedSessions);
     const newFlexStats = [
       { label: 'Akkumuleret flex', value: `${newCumulativeFlex > 0 ? '+' : ''}${newCumulativeFlex}t` },
-      { label: 'Dagens saldo', value: `${todayFlex > 0 ? '+' : ''}${todayFlex}t` },
+      { label: 'Dagens saldo', value: `${Math.floor(todayWorkMinutes / 60)}t ${Math.round(todayWorkMinutes % 60)}m` },
       { label: 'Sidste fravær', value: '13. nov · Ferie' },
     ];
-    const updatedFlexStats = newFlexStats;
-    setFlexStats(updatedFlexStats);
-    saveToStorage({ sessions: updatedSessions, flexStats: updatedFlexStats, checkedIn: false });
+    setFlexStats(newFlexStats);
+    saveToStorage({ sessions: updatedSessions, flexStats: newFlexStats, checkedIn: false });
   };
 
-  const calculateTodayFlex = (todaySessions: Session[]) => {
-    const totalMinutes = todaySessions.reduce((acc, session: Session) => {
+  const calculateTodayWorkMinutes = (todaySessions: Session[]) => {
+    return todaySessions.reduce((acc, session: Session) => {
       if (session.start && session.end) {
-        const start = new Date(session.start);
-        const end = new Date(session.end);
-        const workMinutes = (end.getTime() - start.getTime()) / (1000 * 60);
+        const start = parseInt(session.start);
+        const end = parseInt(session.end);
+        const totalElapsed = end - start;
+        
+        // Calculate lunch break deduction for this session
+        let lunchBreak = 0;
+        const totalElapsedMinutes = totalElapsed / (1000 * 60);
+        
+        if (totalElapsedMinutes >= LUNCH_BREAK_TRIGGER_MINUTES) {
+          lunchBreak = LUNCH_BREAK_MINUTES * 60 * 1000; // 30 minutes in milliseconds
+        }
+        
+        const actualWorkTime = totalElapsed - lunchBreak;
+        const workMinutes = actualWorkTime / (1000 * 60);
         return acc + workMinutes;
       }
       return acc;
     }, 0);
-    
-    const normalWorkMinutes = 8 * 60; // 8 hours = 480 minutes
-    return Math.round((totalMinutes - normalWorkMinutes) / 60 * 10) / 10; // Round to 1 decimal
   };
 
   const calculateCumulativeFlex = (allSessions: Session[]) => {
     const totalWorkMinutes = allSessions.reduce((acc, session: Session) => {
       if (session.start && session.end) {
-        const start = new Date(session.start);
-        const end = new Date(session.end);
-        const workMinutes = (end.getTime() - start.getTime()) / (1000 * 60);
+        const start = parseInt(session.start);
+        const end = parseInt(session.end);
+        const totalElapsed = end - start;
+        
+        // Calculate lunch break deduction for this session
+        let lunchBreak = 0;
+        const totalElapsedMinutes = totalElapsed / (1000 * 60);
+        
+        if (totalElapsedMinutes >= LUNCH_BREAK_TRIGGER_MINUTES) {
+          lunchBreak = LUNCH_BREAK_MINUTES * 60 * 1000; // 30 minutes in milliseconds
+        }
+        
+        const actualWorkTime = totalElapsed - lunchBreak;
+        const workMinutes = actualWorkTime / (1000 * 60);
         return acc + workMinutes;
       }
       return acc;
     }, 0);
     
-    // Only count completed sessions (with end time) as workdays
-    const totalWorkDays = allSessions.filter((s: Session) => s.start && s.end).length;
-    const expectedWorkMinutes = totalWorkDays * 8 * 60; // 8 hours per workday
+    // Count unique workdays, not sessions
+    const uniqueWorkDays = new Set(
+      allSessions
+        .filter((s: Session) => s.start && s.end)
+        .map((s: Session) => new Date(parseInt(s.start)).toDateString())
+    ).size;
+    const expectedWorkMinutes = uniqueWorkDays * 8 * 60; // 8 hours per unique workday
     const flexMinutes = totalWorkMinutes - expectedWorkMinutes;
     const flexHours = Math.round(flexMinutes / 60 * 10) / 10; // Convert to hours, round to 1 decimal
     
@@ -130,10 +243,11 @@ export function DashboardPage() {
   const handleRegisterAbsence = () => {
     if (!absenceType) return;
     
+    const timestamp = Number(new Date());
     const newAbsence = {
-      id: `a${Date.now()}`,
+      id: `a${timestamp}`,
       type: absenceType,
-      date: new Date().toISOString(),
+      date: new Date(timestamp).toISOString(),
       note: absenceNote,
       status: 'pending'
     };
@@ -148,25 +262,51 @@ export function DashboardPage() {
   };
 
   const todaySessions = sessions.filter((s: Session) => {
-    const sessionDate = new Date(s.start);
+    const sessionDate = new Date(parseInt(s.start));
     const today = new Date();
     return sessionDate.toDateString() === today.toDateString();
   });
 
-  const todayFlex = calculateTodayFlex(todaySessions);
+  const todayWorkMinutes = calculateTodayWorkMinutes(todaySessions);
   const cumulativeFlex = calculateCumulativeFlex(sessions);
+
+  // Format elapsed time for display
+  const formatElapsedTime = (milliseconds: number) => {
+    const totalSeconds = Math.floor(milliseconds / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  };
+  
+  // Calculate current elapsed time with lunch deduction
+  const getCurrentWorkTime = () => {
+    if (!currentSessionStart) return 0;
+    
+    const totalElapsed = elapsedTime;
+    const totalElapsedMinutes = totalElapsed / (1000 * 60);
+    
+    let lunchBreak = 0;
+    if (totalElapsedMinutes >= LUNCH_BREAK_TRIGGER_MINUTES) {
+      lunchBreak = LUNCH_BREAK_MINUTES * 60 * 1000;
+    }
+    
+    return totalElapsed - lunchBreak;
+  };
 
   // Update flex stats dynamically for display
   const displayFlexStats = [
     { label: 'Akkumuleret flex', value: `${cumulativeFlex > 0 ? '+' : ''}${cumulativeFlex}t` },
-    { label: 'Dagens saldo', value: `${todayFlex > 0 ? '+' : ''}${todayFlex}t` },
+    { label: 'Dagens saldo', value: checkedIn ? formatElapsedTime(getCurrentWorkTime()) : `${Math.floor(todayWorkMinutes / 60)}t ${Math.round(todayWorkMinutes % 60)}m` },
     { label: 'Sidste fravær', value: flexStats[2]?.value || '13. nov · Ferie' },
   ];
 
   const calculateSessionHours = (session: Session) => {
-    const start = new Date(session.start);
-    const end = new Date(session.end || new Date());
-    const workMinutes = (end.getTime() - start.getTime()) / (1000 * 60);
+    const start = parseInt(session.start);
+    const end = session.end ? parseInt(session.end) : new Date().getTime();
+    // Use timestamps directly for accurate local time calculation
+    const workMinutes = (end - start) / (1000 * 60);
     const hours = Math.floor(workMinutes / 60);
     const minutes = Math.round(workMinutes % 60);
     return `${hours}t ${minutes}m`;
@@ -206,8 +346,8 @@ export function DashboardPage() {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <span className="text-text-secondary font-medium">I dag</span>
-            <span className={`text-2xl font-bold ${todayFlex >= 0 ? 'text-accent' : 'text-danger'}`}>
-              {todayFlex > 0 ? '+' : ''}{todayFlex}t
+            <span className={`text-2xl font-bold ${checkedIn ? 'text-accent' : todayWorkMinutes >= 480 ? 'text-accent' : 'text-danger'}`}>
+              {displayFlexStats[1].value}
             </span>
           </div>
           <div className="flex justify-between items-center">
@@ -250,11 +390,11 @@ export function DashboardPage() {
             <div key={session.id} className="flex justify-between items-center py-3 border-b border-border last:border-b-0">
               <div>
                 <div className="font-semibold text-text-primary">
-                  {format(new Date(session.start), 'dd. MMM yyyy')}
+                  {format(new Date(parseInt(session.start)), 'dd. MMM yyyy')}
                 </div>
                 <div className="text-sm text-text-secondary mt-1">
-                  {format(new Date(session.start), 'HH:mm')} - 
-                  {session.end ? format(new Date(session.end), 'HH:mm') : 'Aktiv'}
+                  {format(new Date(parseInt(session.start)), 'HH:mm')} - 
+                  {session.end ? format(new Date(parseInt(session.end)), 'HH:mm') : 'Aktiv'}
                 </div>
               </div>
               <div className="text-right">

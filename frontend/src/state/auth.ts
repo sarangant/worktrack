@@ -35,17 +35,20 @@ export function getAuthToken() {
   return state.accessToken;
 }
 
-export function loadPersistedAuth() {
+export function loadPersistedAuth(): AuthState | null {
   const token = localStorage.getItem('accessToken');
   const userRaw = localStorage.getItem('user');
   if (token && userRaw) {
     try {
       const user = JSON.parse(userRaw) as User;
       store.set(authAtom, { accessToken: token, user });
+      return { accessToken: token, user };
     } catch {
       clearAuthToken();
+      return null;
     }
   }
+  return null;
 }
 
 export function isAdmin(user?: User | null) {
